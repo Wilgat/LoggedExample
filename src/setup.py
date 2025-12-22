@@ -1,7 +1,7 @@
-#!/home/leolio/.pyenv/shims/python3
+#!/home/adm01/.pyenv/shims/python3
 from setuptools import setup
 from Cython.Build import cythonize
 
 setup(
-  ext_modules=cythonize("src/Example.pyx",compiler_directives={"language_level" : "3"})
+  ext_modules=cythonize("src/LoggedExample.pyx",compiler_directives={"language_level" : "3"})
 )

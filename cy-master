@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/bin/sh
 # -*- coding: utf-8 -*-
 ##! 0<0# : ^
 ##! """
@@ -96,11 +96,9 @@ def resolveSysPath():
         if '' not in sys.path:
             sys.path.insert(0,'')
     return this
-
 # Run resolveSysPath() before any import statement which looks for *.so at the same folder 
 # no matter this program is run using absolution of relative path
 # If you need to compile this program in cython binary, you need to use this.
-
 __file__ = resolveSysPath()
 
 # The following are cythonized *.so libraries stored in the same folder
@@ -121,7 +119,7 @@ class ChronicleLogger:
     CLASSNAME = "ChronicleLogger"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 20  # Updated PATCH_VERSION
+    PATCH_VERSION = 18  # Updated PATCH_VERSION
 
     LOG_ARCHIVE_DAYS = 7  # Number of days to keep log files before archiving
     LOG_REMOVAL_DAYS = 30  # Number of days to keep log files before removal
@@ -134,18 +132,9 @@ class ChronicleLogger:
         self.__is_python__ = None  # Lazy evaluation attribute
 
         # Set logname and logdir
-        if logname=="" or logname==b"":
-            # The function requires non empty string for log name
-            return
         self.logName(logname)
-        if logdir!=b"" and logdir!="":
-            self.logDir(logdir)
-        else:
-            self.logDir("")
-        if basedir!=b"" and basedir!="":
-            self.baseDir(basedir)
-        else:
-            self.baseDir("")
+        self.logDir(logdir)
+        self.baseDir(basedir)
 
         self.__current_logfile_path__ = self._get_log_filename()
         self.ensure_directory_exists(self.__logdir__.decode())
@@ -158,14 +147,6 @@ class ChronicleLogger:
             return value.encode()  # Convert str to bytes
         elif value is None or isinstance(value, bytes):
             return value  # Do nothing, return as is
-        else:
-            raise TypeError("Expected basestring or None or bytes, got {}".format(type(value).__name__))
-
-    def byteToStr(self, value):
-        if value is None or isinstance(value, basestring):  # Check if value is a string
-            return value  # Do nothing, return as is
-        elif isinstance(value, bytes):
-            return value.decode()  # Convert str to bytes
         else:
             raise TypeError("Expected basestring or None or bytes, got {}".format(type(value).__name__))
 
@@ -187,49 +168,51 @@ class ChronicleLogger:
             # Getter
             return self.__logname__.decode()
 
-    def __set_base_dir__(self, basedir=b""):
-        basedir_str = self.byteToStr(basedir)
-        if basedir_str == "":
-            # Determine logdir based on user privileges and input
-            user_home = os.path.expanduser("~")  # Use string for user home
-            if Sudoer.is_root():
-                self.__basedir__ = '/var/{}'.format(self.__logname__.decode())
-            else:
-                self.__basedir__ = os.path.join(user_home, ".app/{}".format(self.__logname__.decode()))
-            self.__basedir__ = self.strToByte(self.__basedir__)  # Convert to bytes
-        else:
-            self.__basedir__ = self.strToByte(basedir)
-
     def baseDir(self, basedir=None):
         if basedir is not None:
-            self.__set_base_dir__(basedir)
+            if basedir == b"":
+                # Determine logdir based on user privileges and input
+                user_home = os.path.expanduser("~")  # Use string for user home
+                if Sudoer.is_root():
+                    self.__basedir__ = '/var/{}'.format(self.__logname__.decode())
+                else:
+                    self.__basedir__ = os.path.join(user_home, ".{}".format(self.__logname__.decode()))
+                self.__basedir__ = self.__basedir__.encode()  # Convert to bytes
+            else:
+                self.__basedir__ = basedir
         else:
             # Getter
             if self.__logdir__ is None:  # Lazy evaluation
-                self.__set_base_dir__()
-            return self.__basedir__.decode()
-
-    def __set_log_dir__(self,logname):
-        logname_str = self.byteToStr(logname)
-        if logname_str == "" :
-            # Determine logdir based on user privileges and input
-            if Sudoer.is_root():
-                self.__logdir__ = '/var/log/{}'.format(self.__logname__.decode())
-            else:
                 user_home = os.path.expanduser("~")  # Use string for user home
-                self.__logdir__ = os.path.join(user_home, ".app/{}".format(self.__logname__.decode()), "log")
-            self.__logdir__ = self.strToByte(self.__logdir__)  # Convert to bytes
-        else:
-            self.__logdir__ = self.strToByte(logname_str)
+                if Sudoer.is_root():
+                    self.__basedir__ = '/var/{}'.format(self.__logname__.decode())
+                else:
+                    self.__basedir__ = os.path.join(user_home, ".{}".format(self.__logname__.decode()))
+                self.__basedir__ = self.__basedir__.encode()  # Convert to bytes
+            return self.__basedir__.decode()
 
     def logDir(self, logdir=None):
         if logdir is not None:
-            self.__set_log_dir__(logdir)
+            if logdir == b"":
+                # Determine logdir based on user privileges and input
+                user_home = os.path.expanduser("~")  # Use string for user home
+                if Sudoer.is_root():
+                    self.__logdir__ = '/var/log/{}'.format(self.__logname__.decode())
+                else:
+                    self.__logdir__ = os.path.join(user_home, ".{}".format(self.__logname__.decode()), "log")
+                self.__logdir__ = self.__logdir__.encode()  # Convert to bytes
+            else:
+                self.__logdir__ = logdir
         else:
             # Getter
             if self.__logdir__ is None:  # Lazy evaluation
-                self.__set_log_dir__()
-            return self.byteToStr(self.__logdir__)
+                user_home = os.path.expanduser("~")  # Use string for user home
+                if Sudoer.is_root():
+                    self.__logdir__ = '/var/log/{}'.format(self.__logname__.decode())
+                else:
+                    self.__logdir__ = os.path.join(user_home, ".{}".format(self.__logname__.decode()), "log")
+                self.__logdir__ = self.__logdir__.encode()  # Convert to bytes
+            return self.__logdir__.decode()
 
     def isDebug(self):
         if not hasattr(self, '__is_debug__'):
@@ -242,17 +225,12 @@ class ChronicleLogger:
         return "{} v{}.{}.{}".format(ChronicleLogger.CLASSNAME, ChronicleLogger.MAJOR_VERSION, ChronicleLogger.MINOR_VERSION, ChronicleLogger.PATCH_VERSION)
 
     def ensure_directory_exists(self, dir_path):
-        if dir_path.strip() !='' and not os.path.exists(dir_path):
-            try:
-                os.makedirs(dir_path)
-                print("Created directory: {}".format(dir_path))
-            except:
-                self.log_message(f"Error making director:{dir_path}", level="ERROR")
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+            print("Created directory: {}".format(dir_path))
+
     def print_to_console(self, log_entry):
         print(log_entry.decode().strip())
-
-    def print_to_stderr(self, log_entry):
-        print(log_entry.decode().strip(), file=sys.stderr)
 
     def _get_log_filename(self):
         date_str = datetime.now().strftime('%Y%m%d')
@@ -278,6 +256,7 @@ class ChronicleLogger:
         if self.__old_logfile_path__ != new_logfile_path:
             self.log_rotation()
             self.__old_logfile_path__ = new_logfile_path  # Update old_logfile_path
+            self.ensure_directory_exists(new_logfile_path.decode())
             if self.isDebug():
                 log_entry_header = "[{}] pid:{} [{}] @logger :] Using {}\n".format(
                     self.timestamp, pid, level_str, new_logfile_path.decode()
@@ -285,10 +264,7 @@ class ChronicleLogger:
                 log_entry = log_entry_header + log_entry
 
         if self._has_write_permission(new_logfile_path):
-            if level_str.upper in ['ERROR', 'CRITICAL', 'FATAL']:
-                self.print_to_stderr(log_entry)
-            else:
-                self.print_to_console(log_entry)
+            self.print_to_console(log_entry)
             self.write_to_file(log_entry)
 
     def _has_write_permission(self, file_path):
@@ -353,28 +329,29 @@ class Sudoer:
     
     CLASSNAME = "Sudoer"
     MAJOR_VERSION = 1
-    MINOR_VERSION = 1
-    PATCH_VERSION = 8
-    __is_root__ = None  # Cache for root status
+    MINOR_VERSION = 0
+    PATCH_VERSION = 6
     __is_sudo__ = None  # Cache for sudo status
-    __handle_signal__ = None
 
     @staticmethod
     def class_version():
-        """Return the class name and version string."""
+        """Return the class version string."""
         return f"{Sudoer.CLASSNAME} v{Sudoer.MAJOR_VERSION}.{Sudoer.MINOR_VERSION}.{Sudoer.PATCH_VERSION}"
 
     @staticmethod
-    def root_or_sudo():
-        """Check if the current user has root or sudo privileges.
+    def root_or_sudo(component=""):
+        """Check if the current user has sudo privileges.
         
         Returns:
-            list: Empty list if the user is not a sudo user, ['sudo'] if the user has sudo privileges.
+            bool: True if the user has sudo privileges, False otherwise.
         """
-        if Sudoer.is_root_or_has_sudo():
-            return ['sudo']
-        else:
-            return []
+        if component != "":
+            if ('hist' in os.environ and os.environ['hist'].lower()=='show' ) or \
+                ('HIST' in os.environ and os.environ['HIST'].lower()=='show' ):
+                print(f"The following part requires root or sudo: {component}")
+        if os.geteuid() == 0:  # Returns 0 if the user is root
+            return True
+        return Sudoer.sudo_test()
 
     @staticmethod
     def is_root():
@@ -383,208 +360,70 @@ class Sudoer:
         Returns:
             bool: True if the user is root, False otherwise.
         """
-        if Sudoer.__is_root__ is None:
-            Sudoer.__is_root__ = os.geteuid() == 0
-        return Sudoer.__is_root__
+        return os.geteuid() == 0
 
     @staticmethod
-    def has_sudo():
+    def sudo_test(msg='.'):
         """Test if the user can execute a command with sudo.
 
         Prompts the user for their sudo password if necessary.
 
+        Parameters:
+            msg (str): A message to echo back for the test.
+
         Returns:
             bool: True if the user can use sudo, False otherwise.
         """
-        if Sudoer.__is_sudo__ is None:
-            try:
-                if Sudoer.__handle_signal__ is None:
-                    signal.signal(signal.SIGINT, Sudoer.signal_handler)
-                    Sudoer.__handle_signal__ = True
-
-                print("The program is trying to use sudo command. It may or may not prompt you to enter password. We don't collect password here. Please verify source code to prevent password leak. If you are not sure, please press Ctl-C to exit.")
-                stdout, stderr = Popen(['/bin/sh', '-c', 'sudo true'],
-                                     stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                                     universal_newlines=True).communicate()
-                Sudoer.__is_sudo__ = stderr.strip() == ""
-            except (OSError, ValueError):
-                Sudoer.__is_sudo__ = False
+        if Sudoer.__is_sudo__ is not None:
+            return Sudoer.__is_sudo__
+            
+        stdout, stderr = Popen(['/bin/sh', '-c', f"sudo --non-interactive echo {msg}"], 
+                                stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                                universal_newlines=True).communicate("\n")
+        if stdout.strip() == msg.strip():
+            Sudoer.__is_sudo__ = True
+            return True
+        stdout, stderr = Popen(['/bin/sh', '-c', f"sudo echo {msg}"],
+                                stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                                universal_newlines=True).communicate("\n")
+        if stdout.strip()== msg.strip():
+            Sudoer.__is_sudo__ = True
+        else:
+            Sudoer.__is_sudo__ = False
         return Sudoer.__is_sudo__
-
-    @staticmethod
-    def is_root_or_has_sudo():
-        """Check if the current user is root or has sudo privileges.
-        
-        Returns:
-            bool: True if the user is root or has sudo privileges, False otherwise.
-        """
-        if Sudoer.__is_root__ is None:
-            Sudoer.__is_root__ = os.geteuid() == 0
-        Sudoer.has_sudo()
-        return Sudoer.__is_root__ or Sudoer.__is_sudo__ 
-
-    @staticmethod
-    def signal_handler(sig, frame):
-        if sig == 2:
-            print('\nYou pressed Ctrl + c!\n')
-        if sig == 3:
-            print('\nYou pressed Ctrl + Back Slash!')
-        sys.exit()
-
-class NmcliManager:
-    """
-    A class to manage nmcli operations for applying network configurations and listing interfaces.
-    
-    Attributes:
-        config_path (str): Path to the network configuration file.
-        logger: Optional logger for logging messages.
-    """
-    CLASSNAME = "NmcliManager"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 1
-
-    def __init__(self, config_path, logger=None):
-        """
-        Initializes the NmcliManager with a configuration file path.
-        
-        Parameters:
-            config_path (str): Path to the network configuration file.
-            logger: Optional logger for logging messages.
-        """
-        self.config_path = config_path
-        self.logger = logger
-
-    @staticmethod
-    def class_version():
-        return f"{NmcliManager.CLASSNAME} v{NmcliManager.MAJOR_VERSION}.{NmcliManager.MINOR_VERSION}.{NmcliManager.PATCH_VERSION}"
-
-    def log(self, message, level="INFO", component="NmcliManager"):
-        """Logs a message using the provided logger if available."""
-        if self.logger:
-            self.logger.log_message(message, level, component)
-        else:
-            print(message)
-
-    def apply(self, netif='Wired connection 1'):
-        """
-        Applies the saved network configuration using nmcli.
-        
-        Parameters:
-            netif (str): Network interface name (default: 'Wired connection 1').
-        """
-        if self.config_path == '' or not os.path.exists(self.config_path):
-            self.log(f"No configuration found at {self.config_path}.", level="ERROR")
-            return
-
-        with open(self.config_path, 'rb') as f:
-            config = pickle.load(f)
-
-        cmd = f"nmcli connection modify '{netif}' "
-        if config['dhcp']:
-            cmd += "ipv4.gateway '' "
-            cmd += "ipv4.addresses '' "
-            cmd += "ipv4.method auto"
-        else:
-            cmd += f"ipv4.addresses {config['ip_address']}/24 "
-            cmd += f"ipv4.gateway {config['gateway']} "
-            cmd += "ipv4.method manual"
-
-        try:
-            subprocess.run(cmd, shell=True, check=True)
-            subprocess.run(f"nmcli connection up '{netif}'", shell=True, check=True)
-            self.log("Configuration applied.")
-        except subprocess.CalledProcessError as e:
-            self.log(f"Failed to apply configuration: {e}", level="ERROR")
-
-    def list_interfaces(self, state=None):
-        """
-        Lists network interfaces with their states and IP addresses, optionally filtered by state.
-        
-        Parameters:
-            state (str, optional): Filter interfaces by state (e.g., 'UP', 'DOWN', 'UNKNOWN'). If None, lists all interfaces.
-        
-        Returns:
-            list: List of dictionaries containing interface details (name, state, ip_addresses).
-        """
-        self.log(f"Detecting network interfaces{' with state ' + state if state else ''}...")
-        try:
-            # Get all interfaces and their states
-            result = subprocess.run("ip link show", shell=True, check=True, text=True, capture_output=True)
-            interfaces = []
-            for line in result.stdout.splitlines():
-                # Check for lines containing interface details
-                if ': <' in line and 'state' in line:
-                    # Extract interface name (between ': ' and ': <')
-                    parts = line.split(': ')
-                    if len(parts) >= 2:
-                        interface_name = parts[1].split(': <')[0].strip()
-                        # Extract state (after 'state ')
-                        state_part = line.split('state ')[1].split(' ')[0].strip()
-                        if interface_name != 'lo' and (state is None or state_part == state):
-                            interfaces.append({'name': interface_name, 'state': state_part, 'ip_addresses': []})
-
-            # Get IP addresses for each interface
-            for iface in interfaces:
-                result = subprocess.run(f"ip addr show {iface['name']}", shell=True, check=True, text=True, capture_output=True)
-                for line in result.stdout.splitlines():
-                    if 'inet ' in line:
-                        ip_parts = line.split()
-                        if len(ip_parts) >= 2 and '/' in ip_parts[1]:
-                            iface['ip_addresses'].append(ip_parts[1])
-
-            if not interfaces:
-                self.log(f"No network interfaces found{' with state ' + state if state else ''}.", level="ERROR")
-                return []
-
-            # Log interface details
-            for iface in interfaces:
-                ip_info = ", ".join(iface['ip_addresses']) if iface['ip_addresses'] else "No IP assigned"
-                self.log(f"Interface: {iface['name']}, State: {iface['state']}, IPs: {ip_info}")
-            self.log(f"Found {len(interfaces)} interfaces{' with state ' + state if state else ''}.")
-            return interfaces
-        except subprocess.CalledProcessError as e:
-            self.log(f"Error listing interfaces: {e.stderr}", level="ERROR")
-            return []
-        except Exception as e:
-            self.log(f"Unexpected error listing interfaces: {str(e)}", level="ERROR")
-            return []
 
 class NetworkCore:
     """
     A class to manage network configurations, including setting up 
-    DHCP or static IP addresses, and checking connectivity.
+    DHCP or static IP addresses using NetworkCore's command-line 
+    interface (nmcli).
     
     Attributes:
         basedir (str): The base directory for storing configuration files.
         CONFIG_PATH (str): The path to the network configuration file.
-        nmcli_manager (NmcliManager): Instance for handling nmcli operations.
     """
     CLASSNAME = "NetworkCore"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 11
+    PATCH_VERSION = 7  # Incremented version
     CHECKED = False
-    ONLINE_STATUS = None
+    ONLINE_STATUS = None  # New attribute to track online status
 
     def __init__(self, appname="", basedir='', logger=None):
         """
         Initializes the NetworkCore with a specified base directory.
         
         Parameters:
-            appname (str): The name of the application.
             basedir (str): The directory where configuration files will be stored.
-            logger: Optional logger for logging messages.
         """
         self.basedir = basedir
         self.appname = appname
-        self.logger = logger
+        self.logger = logger  # Store the logger if provided
         if basedir != '':
-            self.CONFIG_PATH = f"{self.basedir}/network.serial"
             self.ensure_directory_exists(self.basedir)
+            self.CONFIG_PATH = f"{self.basedir}/network.serial"
         else:
             self.CONFIG_PATH = ''
-        self.nmcli_manager = NmcliManager(self.CONFIG_PATH, logger)
         self.check_dependencies()
 
     @staticmethod
@@ -596,22 +435,16 @@ class NetworkCore:
         if self.logger:
             self.logger.log_message(message, level, component)
         else:
-            print(message)
+            print(message)  # Fallback to print if no logger is provided
 
     def ensure_directory_exists(self, dir_path):
         try:
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
                 self.log(f"Created directory: {dir_path}", component=NetworkCore.CLASSNAME)
-        except OSError as e:
-            self.log(f"Cannot write to {dir_path}: {e}", level="CRITICAL", component=NetworkCore.CLASSNAME)
+        except:
+            self.log(f"Cannot write to {dir_path}", level="CRITICAL", component=NetworkCore.CLASSNAME)
             sys.exit(1)
-
-        if not os.path.exists(self.CONFIG_PATH):
-            default_config = {'dhcp': True}
-            with open(self.CONFIG_PATH, 'wb') as f:
-                pickle.dump(default_config, f)
-            self.log(f"Default configuration created at {self.CONFIG_PATH}")
 
     def check_dependencies(self):
         """Checks if required dependencies are available."""
@@ -647,13 +480,14 @@ class NetworkCore:
         Returns:
             bool: True if the network is up and reachable, False otherwise.
         """
-        if self.ONLINE_STATUS is not None:
+        if self.ONLINE_STATUS is not None:  # Check if already evaluated
             return self.ONLINE_STATUS
         
         if not self.check_network():
             self.ONLINE_STATUS = False
             return self.ONLINE_STATUS
         
+        # DNS servers to check
         dns_servers = [
             ('208.67.222.222', "OpenDNS Primary DNS"),
             ('208.67.220.220', "OpenDNS Secondary DNS"),
@@ -665,6 +499,7 @@ class NetworkCore:
             ('1.1.1.2', "Cloudflare Malware blocking DNS")
         ]
         
+        # Randomize the order of DNS servers
         random.shuffle(dns_servers)
 
         for ip, name in dns_servers:
@@ -686,25 +521,22 @@ class NetworkCore:
     def save_conf(self):
         """Prompts the user to specify whether to use DHCP or a static IP address."""
         if self.CONFIG_PATH != '':
-            while True:
-                dhcp = input("Are you using DHCP? (yes/no, default is yes): ").strip().lower()
-                if dhcp in ('yes', ''):
-                    config = {'dhcp': True}
-                    break
-                elif dhcp == 'no':
-                    ip_address = input("Enter static IP address (default is 192.168.0.8): ").strip() or '192.168.0.8'
-                    gateway = input("Enter gateway (default is 192.168.0.1): ").strip() or '192.168.0.1'
-                    config = {'dhcp': False, 'ip_address': ip_address, 'gateway': gateway}
-                    break
-                else:
-                    print("Invalid input. Please enter 'yes' or 'no'.")
+            dhcp = input("Are you using DHCP? (yes/no, default is yes): ").strip().lower()
+            if dhcp in ('yes', ''):
+                config = {'dhcp': True}
+            elif dhcp == 'no':
+                ip_address = input("Enter static IP address (default is 192.168.0.8): ").strip() or '192.168.0.8'
+                gateway = input("Enter gateway (default is 192.168.0.1): ").strip() or '192.168.0.1'
+                config = {'dhcp': False, 'ip_address': ip_address, 'gateway': gateway}
+            else:
+                print("Invalid input. Please enter 'yes' or 'no'.")
+                return
 
+            # Serialize and save the configuration
             with open(self.CONFIG_PATH, 'wb') as f:
                 pickle.dump(config, f)
 
             print(f"Configuration saved to {self.CONFIG_PATH}")
-        else:
-            self.log("Config path not set!", component=NetworkCore.CLASSNAME)
 
     def show_conf(self):
         """Displays the current network configuration."""
@@ -720,25 +552,31 @@ class NetworkCore:
                 print("Current configuration: Using DHCP.")
             else:
                 print(f"Current configuration:\n  IP Address: {config['ip_address']}\n  Gateway: {config['gateway']}")
-        else:
-            self.log("Config path not set!", component=NetworkCore.CLASSNAME)
 
     def apply(self):
-        """Delegates application of the network configuration to NmcliManager."""
-        self.nmcli_manager.apply()
-
-    def install(self):
-        """Install the script to /usr/local/bin/ and create a default configuration."""
-        script_path = os.path.abspath(__file__)
-        destination_path = f'/usr/local/bin/{self.appname}'
-
-        if os.path.exists(destination_path):
-            self.log(f"{self.appname} is already installed.", component=NetworkCore.CLASSNAME)
+        """Applies the saved network configuration using nmcli."""
+        if self.CONFIG_PATH == '' or not os.path.exists(self.CONFIG_PATH):
+            self.log(f"No configuration found at {self.CONFIG_PATH}.", component=NetworkCore.CLASSNAME)
             return
 
-        shutil.copy(script_path, destination_path)
-        print(f"Script installed to {destination_path}")
-    
+        with open(self.CONFIG_PATH, 'rb') as f:
+            config = pickle.load(f)
+
+        cmd = "nmcli connection modify 'Wired connection 1' "
+        if config['dhcp']:
+            cmd += "ipv4.gateway '' "
+            cmd += "ipv4.addresses '' "
+            cmd += "ipv4.method auto"
+        else:
+            cmd += f"ipv4.addresses {config['ip_address']}/24 "
+            cmd += f"ipv4.gateway {config['gateway']} "
+            cmd += "ipv4.method manual"
+
+        os.system(cmd)
+        os.system("nmcli connection up 'Wired connection 1'")
+
+        self.log("Configuration applied.", component=NetworkCore.CLASSNAME)
+
 class Attr(object):
     RESERVED = ['False', 'def', 'if', 'raise', 'None', 'del', 'import', 
         'return', 'True', 'elif', 'in', 'try', 'and', 'else', 'is', 'while', 
@@ -1513,15 +1351,13 @@ class CmdHistory(StateLogic):
     CLASSNAME = "CmdHistory"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 2
+    PATCH_VERSION = 0
 
     @staticmethod
     def class_version():
         return f"{CmdHistory.CLASSNAME} v{CmdHistory.MAJOR_VERSION}.{CmdHistory.MINOR_VERSION}.{CmdHistory.PATCH_VERSION}"
 
     def __init__(self, fromClass=None, this=None):
-        if fromClass is None:
-            fromClass = self
         try:
             super().__init__(fromClass=fromClass, this=this)
         except:
@@ -1532,7 +1368,6 @@ class CmdHistory(StateLogic):
         Attr(self, "timeFinished", datetime.now())
         Attr(self, "historyID", 0)
         Attr(self, "histories", ["# ====== Command History starting at %s: ======" % self.tick()], autostrip=False, sorting=False)
-        Attr(self, "lastHistory",'')
 
     def cmd_history(self,command=None, line=None):
         if not hasattr(self, '__reg_end_stars__'):
@@ -1546,10 +1381,7 @@ class CmdHistory(StateLogic):
                 cmd = " ".join(command)
             else:
                 cmd = ""
-            if self.lastHistory() == cmd:
-                return self
             if cmd.startswith("# **"):
-                self.lastHistory(cmd)
                 if line is not None:
                     line_at = "--line %d--" % line
                 else:
@@ -1560,7 +1392,6 @@ class CmdHistory(StateLogic):
                     self.histories("  #    ...( %.3f second )" % self.timeDiff().total_seconds())
                 self.histories("# ** %d. %s %s **" % (self.historyID(), cmd[5:], line_at))
             elif cmd != "":
-                self.lastHistory(cmd)
                 self.histories("  %s" % cmd)
         return self
 
@@ -1583,15 +1414,6 @@ class CmdHistory(StateLogic):
                 self.infoMsg("%s\n  # ====== End at %s ...( %.3f second ) %s ======\n" % ( history_list, str(self.tick()),self.timeFinished().total_seconds(), end_at), "COMMAND HISTORY")
 
 class AppHistory(CmdHistory):
-
-    CLASSNAME = "AppHistory"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 0
-
-    @staticmethod
-    def class_version():
-        return f"{AppHistory.CLASSNAME} v{AppHistory.MAJOR_VERSION}.{AppHistory.MINOR_VERSION}.{AppHistory.PATCH_VERSION}"
 
     def __init__(self, fromClass=None, this=None):
         try:
@@ -2073,115 +1895,44 @@ class OS(AppHistory, Reflection):
 
     def uname_m(self, ignoreErr=True):
         return self.uname('-m', ignoreErr=ignoreErr)
+
 class Which(Sh):
     """Class to install and configure package."""
 
     CLASSNAME = "Which"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 5
+    PATCH_VERSION = 2
 
     @staticmethod
     def class_version():
         return f"{Which.CLASSNAME} v{Which.MAJOR_VERSION}.{Which.MINOR_VERSION}.{Which.PATCH_VERSION}"
 
-    def isLinuxShell(self):
-        return self.shellCmd() == '/bin/bash' or self.shellCmd() == '/bin/zsh' or \
-            self.shellCmd() == '/bin/sh' or self.shellCmd() == '/bin/ash' or \
-            self.shellCmd() == '/usr/bin/fish'
-
-    def isCmd(self):
-        if not hasattr(self, '__is_cmd__'):
-            if not hasattr(self, '__shell_cmd__'):
-                self.shellCmd()
-            self.__is_cmd__ = self.__shell_cmd__.split('\\')[-1] == 'cmd.exe' 
-        return self.__is_cmd__
-
-
-    def shell(self, command='', ignoreErr=False, ignoreShell=False, ignoreAll=False):
-        stderr = ''
-        stdout = ''
-        useWinpty = False
-        if ignoreErr:
-            self.ignoreError()
-        if ignoreAll:
-            pipe_array=[]
-        elif ignoreShell:
-            if self.isGitBash():
-                winpty = self.find_winpty()
-                if winpty == "":
-                    pipe_array=[]
-                else:
-                    useWinpty = True
-                    pipe_array=[winpty]
-            else:
-                pipe_array=[]
-        elif self.isLinuxShell():   
-            pipe_array=[self.shellCmd(),'-c']
-        elif self.isGitBash():
-            winpty = self.find_winpty()
-            if winpty == "":
-                pipe_array=[self.shellCmd(),'-c']
-            else:
-                useWinpty = True
-                pipe_array=[winpty, self.shellCmd(),'-c']
-        elif self.isCmd():
-            pipe_array=[self.shellCmd(),'/c']
-        else:
-            # Assume /bin/sh as default shell
-            pipe_array=['/bin/sh','-c']
-        if isinstance(command, basestring):
-            pipe_array.append(command)
-        elif isinstance(command, list):
-            if self.isCmd() or self.isGitBash():
-                for cmdlet in command:
-                    pipe_array.append(cmdlet)
-            else:
-                pipe_array=[]
-                for cmdlet in command:
-                    pipe_array.append(cmdlet)
-        else:
-            if self.testIgnoredResetNormal():
-                return True, ""
-            else:
-                self.hasError()
-                return False, "Wrong command data type."
-        result, output=self.winpty_exec_command(pipe_array)
-        self.resetNormal()
-        return result, output
-
-    def winpty_exec_command(self, pipe_array):
+    def __init__(self, fromClass=None, this=None):
         try:
-            # Check if the command is invoked with winpty.exe
-            running_under_winpty = os.environ.get('WINPTY') is not None
-            use_winpty = pipe_array[0].endswith('winpty.exe')
+            super().__init__(fromClass=fromClass, this=this)
+        except:
+            super(Which, self).__init__(fromClass=fromClass, this=this)
 
-            # If running under winpty and invoking it again, skip winpty invocation
-            if running_under_winpty and use_winpty:
-                stdout, stderr = Popen(pipe_array[1:], stdin=PIPE, stdout=PIPE,
-                                        stderr=PIPE, universal_newlines=True).communicate('\n')
-            else:
-                stdout, stderr = Popen(pipe_array, stdin=PIPE, stdout=PIPE,
-                                        stderr=PIPE, universal_newlines=True).communicate('\n')
-            # Check for errors
-            if stderr.strip().lower() == 'stdin is not a tty' and use_winpty:
-                stdout, stderr = Popen(pipe_array[1:], stdin=PIPE, stdout=PIPE,
-                                        stderr=PIPE, universal_newlines=True).communicate('\n')
-
-            # Handle errors
-            if stderr:
-                if self.testIgnoredResetNormal():
-                    return True, ""
-                else:
-                    self.hasError()
-                    return False, ""
-            return True, stdout
-        except Exception as e:
-            if self.testIgnoredResetNormal():
-                return True, ""
-            else:
-                self.hasError()
-                return False, str(e)
+    def which(self):
+        if self.isCmd()  or self.isGitBash():
+            if self.pathexists(self.localInstallPath()):
+                return self.localInstallPath()
+            elif self.pathexists(self.globalInstallPath(0)):
+                return self.globalInstallPath(0)
+            elif self.pathexists(self.globalInstallPath(1)):
+                return self.globalInstallPath(1)
+            elif self.pathexists('C:\\Windows\\System32\\where.exe'):
+                return self.where_cmd( self.appName())
+        else:
+            if self.pathexists(self.localInstallPath()):
+                return self.localInstallPath()
+            elif self.pathexists(self.globalInstallPath(0)):
+                return self.globalInstallPath(0)
+            elif self.pathexists(self.globalInstallPath(1)):
+                return self.globalInstallPath(1)
+            if self.pathexists('/usr/bin/which'):
+                return self.which_cmd( self.appName())
 
     def which_cmd(self, cmd, default=""):
         if cmd is None:
@@ -2273,7 +2024,7 @@ class Shell(OS, Which):
     CLASSNAME = "Shell"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 27
+    PATCH_VERSION = 20
 
     @staticmethod
     def class_version():
@@ -2320,7 +2071,7 @@ class Shell(OS, Which):
                 if use_history:
                     self.cmd_history(cmd)
                 result, stdout = self.shell(cmd)
-                return result
+            return result
         return False
 
     def chown(self, filePath="", owner="", use_history=True, useSudo=False):
@@ -2461,8 +2212,6 @@ class Shell(OS, Which):
     def home(self):
         return os.path.expanduser("~")
 
-    def pathjoin(self, p1, p2):
-        return re.compile(r"\/\/").sub("/",re.compile(r"/\./").sub("/",os.path.join(p1, p2)))
 
     def is_gnu_tar(self):
         result = False
@@ -2608,17 +2357,82 @@ class Shell(OS, Which):
             self.cmd_history(cmd)
             self.ignoreError().shell(cmd)
 
-    def find_winpty(self):
-        if hasattr(self, '__where_winpty__'):
-            return self.__where_winpty__
-        # Define the path to winpty.exe
-        winpty_path = r'C:\Program Files\Git\usr\bin\winpty.exe'
-        # Check if the file exists
-        if os.path.exists(winpty_path):
-            self.__where_winpty__ = winpty_path
+    def shell(self, command='', ignoreErr=False, ignoreShell=False, ignoreAll=False):
+        stderr = ''
+        stdout = ''
+        useWinpty = False
+        if ignoreErr:
+            self.ignoreError()
+        if ignoreAll:
+            pipe_array=[]
+        elif ignoreShell:
+            if self.isGitBash():
+                winpty = self.where_cmd('winpty.exe')
+                if winpty == "":
+                    pipe_array=[]
+                else:
+                    useWinpty = True
+                    pipe_array=[winpty]
+            else:
+                pipe_array=[]
+        elif self.isLinuxShell():   
+            pipe_array=[self.shellCmd(),'-c']
+        elif self.isGitBash():
+            winpty = self.where_cmd('winpty.exe')
+            if winpty == "":
+                pipe_array=[self.shellCmd(),'-c']
+            else:
+                useWinpty = True
+                pipe_array=[winpty, self.shellCmd(),'-c']
+        elif self.isCmd():
+            pipe_array=[self.shellCmd(),'/c']
         else:
-            self.__where_winpty__ = self.where_cmd('winpty.exe')
-        return self.__where_winpty__ 
+            # Assume /bin/sh as default shell
+            pipe_array=['/bin/sh','-c']
+        if isinstance(command, basestring):
+            pipe_array.append(command)
+        elif isinstance(command, list):
+            if self.isCmd() or self.isGitBash():
+                for cmdlet in command:
+                    pipe_array.append(cmdlet)
+            else:
+                pipe_array=[]
+                for cmdlet in command:
+                    pipe_array.append(cmdlet)
+        else:
+            if self.testIgnoredResetNormal():
+                return True, ""
+            else:
+                self.hasError()
+                return False, "Wrong command data type."
+        try:
+            stdout,stderr = Popen(pipe_array,stdin=PIPE,stdout=PIPE,\
+                stderr=PIPE,universal_newlines=True).communicate('\n')
+        except:
+            if self.testIgnoredResetNormal():
+                return True, ""
+            else:
+                self.hasError()
+                return False
+        try:
+            if stderr.strip().lower() == 'stdin is not a tty' and useWinpty:
+                stdout,stderr = Popen(pipe_array[1:],stdin=PIPE,stdout=PIPE,\
+                    stderr=PIPE,universal_newlines=True).communicate('\n')
+            if stderr != "":
+                if self.testIgnoredResetNormal():
+                    return True, stdout
+                else:
+                    self.hasError()
+                    self.msg_error(command, stderr)
+                    return False, stderr
+        except:
+            if self.testIgnoredResetNormal():
+                return True, ""
+            else:
+                self.hasError()
+                return False, ""
+        self.resetNormal()
+        return True, stdout
 
     def ln(self, source="", target="", use_history=True, useSudo=False):
         if self.isCmd():
@@ -2767,12 +2581,372 @@ class Temp(AppHistory):
         else:
             return folder
 
+class InstallerBase(Shell,Temp):
+
+    CLASSNAME = "InstallerBase"
+    MAJOR_VERSION = 1
+    MINOR_VERSION = 0
+    PATCH_VERSION = 15
+
+    @staticmethod
+    def class_version():
+        return f"{InstallerBase.CLASSNAME} v{InstallerBase.MAJOR_VERSION}.{InstallerBase.MINOR_VERSION}.{InstallerBase.PATCH_VERSION}"
+
+    def __init__(self, fromClass=None, this=None):
+        try:
+            super().__init__(fromClass=fromClass, this=this)
+        except:
+            super(InstallerBase, self).__init__(fromClass=fromClass, this=this)
+
+    def install_package(self, package=None, path=None):
+        installed = False
+        self.history_check_exists(package, currentframe().f_lineno)
+        if self.which_cmd(package):
+            self.cmd_history(f"  # {package} exists")
+            return True
+        checkPath=False
+        if path is not None and package is not None:
+            if isinstance(path,basestring):
+                if self.pathexists(path, use_history=True):
+                    self.history_package_exists(package, currentframe().f_lineno)
+                    checkPath= True
+                if self.which_cmd(path):
+                    self.cmd_history("ls %s" % self.which_cmd(path))
+                    checkPath=True
+            elif isinstance(path,list):
+                for l in path:
+                    if self.pathexists(l, use_history=True):
+                        self.history_package_exists(package, currentframe().f_lineno)
+                        checkPath= True
+                    if self.which_cmd(l):
+                        self.cmd_history("ls %s" % self.which_cmd(l))
+                        self.history_package_exists(package, currentframe().f_lineno)
+                        checkPath=True
+        if checkPath:
+            self.cmd_history(f"  # {package} exists")
+            return True
+        else:
+            self.cmd_history(f"  # {package} not exists")
+        if self.update_repository():
+            if self.is_debian():
+                self.history_install_package(package, currentframe().f_lineno)
+                if not Sudoer.is_root():
+                    cmd = "sudo apt install -y %s" % package
+                else:
+                    cmd = "apt install -y %s" % package
+                self.cmd_history(cmd)
+                result, stdout=self.ignoreError().shell(cmd)
+                if 'lock-frontend' in stdout:
+                    if not Sudoer.is_root():
+                        cmd2 = "sudo rm -rf /var/lib/dpkg/lock-frontend"
+                    else:
+                        cmd2 = "rm -rf /var/lib/dpkg/lock-frontend"
+                    self.cmd_history(cmd2)
+                    result, stdout=self.ignoreError().shell(cmd2)
+                    self.cmd_history(cmd)
+                    result, stdout=self.ignoreError().shell(cmd)
+                installed = result
+            elif self.is_alpine():
+                self.history_install_package(package, currentframe().f_lineno)
+                if not Sudoer.is_root():
+                    cmd = "sudo apk add %s" % package
+                else:
+                    cmd = "apk add %s" % package
+                self.cmd_history(cmd)
+                self.ignoreError().shell(cmd)
+                installed = True
+            elif self.is_redhat():
+                if not Sudoer.is_root():
+                    cmd = "sudo yum install -y %s" % package
+                else:
+                    cmd = "yum install -y %s" % package
+                self.cmd_history(cmd)
+                self.ignoreError().shell(cmd)
+                installed = True
+            elif self.is_fedora():
+                if not Sudoer.is_root():
+                    cmd = "sudo dnf install -y %s" % package
+                else:
+                    cmd = "dnf install -y %s" % package
+                self.cmd_history(cmd)
+                self.ignoreError().shell(cmd)
+                installed = True
+            elif self.is_opensuse():
+                if not Sudoer.is_root():
+                    cmd = "sudo zypper install -y %s" % package
+                else:
+                    cmd = "zypper install -y %s" % package
+                self.cmd_history(cmd)
+                self.ignoreError().shell(cmd)
+                installed = True
+            else:
+                self.cmd_history("  # Not compatible OS")
+                self.msg_not_compatible_os()
+            if installed:
+                if path is not None and package is not None:
+                    if isinstance(path,basestring):
+                        if self.pathexists(path):
+                            installed = True
+                    elif isinstance(path,list):
+                        for l in path:
+                            if self.pathexists(l):
+                                installed = True
+                else:
+                    installed = False
+            if installed:
+                self.cmd_history(f"  # {package} has just installed")
+        return installed
+
+    def installedGlobal(self):
+        return self.pathexists(self.globalInstallPath(0)) or self.pathexists(self.globalInstallPath(1)) 
+
+    def installedLocal(self):
+        which = self.which()
+        if which == '':    
+            return False
+        if self.isCmd() or self.isGitBash():
+            return self.path_to_dos(which) == self.path_to_dos(self.localInstallPath())
+        return which == self.localInstallPath()
+
+    def install_target_global(self, this, useSudo=False):
+        if self.targetApp() != '':
+            file1 = self.globalInstallTargetPath(0)
+            file2 = self.globalInstallTargetPath(1)
+            self.history_remove_previous_global(currentframe().f_lineno)
+            self.sudoRemoveFile( file1 )
+            self.sudoRemoveFile( file2 )
+        if self.pathexists(self.globalFolder(0)):
+            self.history_copy_uncompressed(currentframe().f_lineno)
+            self.cp(this,file1,useSudo=useSudo)
+            if not self.isCmd() and not self.isGitBash():
+                self.history_change_target_mode(currentframe().f_lineno)
+                self.chmod_x(file1, useSudo=useSudo)
+        elif self.pathexists(self.globalFolder(1)):
+            self.history_copy_uncompressed(currentframe().f_lineno)
+            self.cp(this,file2,useSudo=useSudo)
+            if not self.isCmd() and not self.isGitBash():
+                self.history_change_target_mode(currentframe().f_lineno)
+                self.chmod_x(file2, useSudo=useSudo)
+        if this.startswith('/tmp') or self.isGitBash() or self.isCmd():
+            self.history_remove_uncompressed(currentframe().f_lineno)
+            self.removeFile(this)
+
+    def install_target_local(self, this):
+        self.mkdir( self.localInstallFolder() )
+        if self.targetApp() != '':
+            self.history_remove_previous_local(currentframe().f_lineno)
+            self.removeFile(self.localTargetInstallPath())
+        self.history_copy_uncompressed(currentframe().f_lineno)
+        self.cp(this, self.localInstallFolder())
+        if not self.isCmd() and not self.isGitBash():
+            self.history_change_target_mode(currentframe().f_lineno)
+            result = self.chmod_x(self.localTargetInstallPath())
+        if this.startswith('/tmp') or self.isCmd() or self.isGitBash():
+            self.history_remove_downloaded(currentframe().f_lineno)
+            self.removeFile(this)
+        self.check_env()
+
+    def rc_update(self, package):
+        self.history_check_rc_update(currentframe().f_lineno)
+        if Sudoer.root_or_sudo("InstallerBase::rc_update"):
+            rc_cmd = self.which_cmd("rc-update")
+            if rc_cmd != "":
+                if self.sudo_cmd!="":
+                    cmd = 'sudo %s add %s default' % (rc_cmd, package)
+                else:
+                    cmd = '%s add %s default' % (rc_cmd, package)
+
+    def update_repository(self):
+        # root_or_sudo() Check user is root or has sudo privilege and assuming linux
+        cmd = ""
+        if not Sudoer.root_or_sudo():
+            return False
+        if not hasattr(self,'__has_repository_updated__'):
+            self.__has_repository_updated__ = False
+        if self.__has_repository_updated__:
+            return True
+        if self.is_debian():
+            if Sudoer.is_root():
+                cmd = "apt update"
+            else:
+                cmd = "sudo apt update"
+        elif self.is_alpine():
+            cmd = "apk update"
+        elif self.osVersion().startswith('CentOS'):
+            if Sudoer.is_root():
+                cmd = "yum check-update"
+            else:
+                cmd = "sudo yum check-update"
+        elif self.is_fedora():
+            if Sudoer.is_root():
+                cmd = "dnf check-update"
+            else:
+                cmd = "sudo dnf check-update"
+        else:
+            self.msg_not_compatible_os()
+        if cmd != "":
+            self.history_update_repository(currentframe().f_lineno)
+            self.cmd_history(cmd)
+            self.ignoreError().shell(cmd)
+            self.__has_repository_updated__=True
+            return True
+        return False
+
+    def uninstall_package(self, package=None, path=None):
+        # root_or_sudo() Check user is root or has sudo privilege and assuming linux
+        if not Sudoer.root_or_sudo("InstallerBase::uninstall_package"):
+            return False
+        installed = False
+        location = ''
+        if path is not None and package is not None:
+            self.history_check_exists(package, currentframe().f_lineno)
+            if isinstance(path,basestring):
+                if self.pathexists(path, use_history=True):
+                    location = path
+                    installed=True
+                    self.history_location_found(location, currentframe().f_lineno)
+            elif isinstance(path,list):
+                for l in path:
+                    if self.pathexists(l, use_history=True):
+                        location = l
+                        installed=True
+                        self.history_location_found(location, currentframe().f_lineno)
+        if installed:
+            if self.is_debian():
+                self.history_uninstall_package(package, currentframe().f_lineno)
+                if not Sudoer.is_root():
+                    cmd = ["sudo", "DEBIAN_FRONTEND=noninteractive", "apt", "purge", "--auto-remove", "-y", package]
+                else:
+                    cmd =["DEBIAN_FRONTEND=noninteractive", "apt", "purge", "--auto-remove", "-y", package]
+                self.cmd_history(" ".join(cmd))
+                self.ignoreError().shell(cmd)
+                installed = True
+            elif self.is_alpine():
+                self.history_uninstall_package(package, currentframe().f_lineno)
+                if not Sudoer.is_root():
+                    cmd = ["sudo", "apk", "del", package]
+                else:
+                    cmd = ["apk", "del", package]
+                self.cmd_history(" ".join(cmd))
+                self.ignoreError().shell(cmd)
+                installed = True
+            elif self.osVersion().startswith('CentOS'):
+                if not Sudoer.is_root():
+                    cmd = "sudo yum remove -y %s" % package
+                else:
+                    cmd = "yum remove -y %s" % package
+                self.cmd_history(cmd)
+                self.ignoreError().shell(cmd)
+                installed = True
+            elif self.is_fedora():
+                if not Sudoer.is_root():
+                    cmd = "sudo dnf remove -y %s" % package
+                else:
+                    cmd = "dnf remove -y %s" % package
+                self.cmd_history(cmd)
+                self.ignoreError().shell(cmd)
+                installed = True
+            else:
+                self.msg_not_compatible_os()
+                return False
+            if self.pathexists(location):
+                self.msg_uninstall_global()
+                return False
+        return installed
+
+    def nopw(self, user, cmd):
+        return "%s ALL=(ALL) NOPASSWD: %s" % (user, cmd)
+
+    def add_sudoers(self, fname, content):
+        # root_or_sudo() Check user is root or has sudo privilege and assuming linux
+        if not Sudoer.root_or_sudo("InstallerBase::add_sudoers"):
+            return False
+        target_sudoers="/etc/sudoers.d/%s" % fname
+        if not self.pathexists(target_sudoers):
+            tempSudoer = "%s/%s-%s" % (self.tempFolder(),fname, self.timestamp())
+            file = self.open(tempSudoer,'w')
+            file.write(content)
+            file.close()
+            if Sudoer.is_root():
+                self.cp(tempSudoer, target_sudoers)
+            else:
+                self.cp(tempSudoer, target_sudoers, useSudo=True)
+            self.history_remove_temp(currentframe().f_lineno)
+            self.removeFile(tempSudoer)
+            return True
+        return True
+
+    def __alpine_ask_install_sudo__(self):
+        if self.ask_install_sudo():
+            cmd=['apk', 'add', 'sudo']
+            self.cmd_history(' '.join(cmd))
+            result, stdout = self.shell(cmd, True)
+            cmd="echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/wheel"
+            self.cmd_history(cmd)
+            result, stdout = self.shell(cmd)
+    
+    def add_apk_community(self):
+        comm="https://dl-cdn.alpinelinux.org/alpine/%s/community" % self.alpine_version()
+        hasCommunity=False
+        self.history_check_repositories(currentframe().f_lineno)
+        fin = self.open('/etc/apk/repositories', "rt", use_history=True)
+        for line in fin:
+            if 'https://dl-cdn.alpinelinux.org' in line and 'community' in line:
+                if '#' not in line:
+                    hasCommunity=True
+        fin.close()
+        if not hasCommunity:
+            with self.open('/etc/apk/repositories', "a") as file:
+                file.write("\n%s\n" % comm)
+            file.close()
+        return True
+
+    def msg_uninstall_global(self, title="GLOBAL UNINSTALL"):
+        self.safeMsg("You have uninstalled successfully.", title)
+
+    def msg_not_compatible_os(self, title="INSTALL"):
+        self.infoMsg("Your OS is not compatible: %s" % self.osVersion(), title)
+
+    def msg_root_continue(self, title="SELF INSTALL"):
+        self.infoMsg("You must be root or sudo to continue installation!", title)
+
+class InstallPing(InstallerBase):
+
+    CLASSNAME = "InstallPing"
+    MAJOR_VERSION = 1
+    MINOR_VERSION = 0
+    PATCH_VERSION = 3
+
+    @staticmethod
+    def class_version():
+        return f"{InstallPing.CLASSNAME} v{InstallPing.MAJOR_VERSION}.{InstallPing.MINOR_VERSION}.{InstallPing.PATCH_VERSION}"
+
+    def __init__(self, fromClass=None, this=None):
+        try:
+            super().__init__(fromClass=fromClass, this=this)
+        except:
+            super(InstallPing, self).__init__(fromClass=fromClass, this=this)
+
+    def install_ping(self):
+        if self.is_alpine():
+            result = self.install_package('iputils-ping', ['/usr/bin/ping'])
+        else:
+            result = self.install_package('iputils-ping', ['/usr/bin/ping'])
+        return result
+
+    def uninstall_ping(self):
+        if self.is_alpine():
+            result = self.uninstall_package('iputils-ping', ['/usr/bin/ping'])
+        else:
+            result = self.uninstall_package('iputils-ping', ['/usr/bin/ping'])
+        return result
+
 class PyCheck(Shell):
 
     CLASSNAME = "PyCheck"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 5
+    PATCH_VERSION = 4
 
     @staticmethod
     def class_version():
@@ -2863,590 +3037,6 @@ class PyCheck(Shell):
                         else:
                             self.cythonString("cpython-%s%s-%s-linux-gnu" % (version_array[0], version_array[1], arch))
         self.pyChecked(True)
-
-class InstallerBase(PyCheck,Temp):
-
-    CLASSNAME = "InstallerBase"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 23
-
-    @staticmethod
-    def class_version():
-        return f"{InstallerBase.CLASSNAME} v{InstallerBase.MAJOR_VERSION}.{InstallerBase.MINOR_VERSION}.{InstallerBase.PATCH_VERSION}"
-
-    def __init__(self, fromClass=None, this=None):
-        try:
-            super().__init__(fromClass=fromClass, this=this)
-        except:
-            super(InstallerBase, self).__init__(fromClass=fromClass, this=this)
-        Attr(self, 'sudo_cmd', self.which_cmd('sudo'))
-
-    def install_package(self, package=None, path=None):
-        installed = False
-        self.cmd_history(f"# ** @InstallerBase, installing {package} **")
-        self.cmd_history(f"# @InstallerBase, checking {path} **")
-        checkPath=False
-        if path is not None and package is not None:
-            if isinstance(path,basestring):
-                if self.pathexists(path, use_history=True):
-                    self.history_package_exists(package, currentframe().f_lineno)
-                    checkPath= True
-                if self.which_cmd(path):
-                    self.cmd_history("ls %s" % self.which_cmd(path))
-                    checkPath=True
-            elif isinstance(path,list):
-                for l in path:
-                    if self.pathexists(l, use_history=True):
-                        self.history_package_exists(package, currentframe().f_lineno)
-                        checkPath= True
-                    if self.which_cmd(l):
-                        self.cmd_history("ls %s" % self.which_cmd(l))
-                        self.history_package_exists(package, currentframe().f_lineno)
-                        checkPath=True
-        if checkPath:
-            self.cmd_history(f"# @InstallerBase, package: '{package}' exists")
-            return True
-        else:
-            self.cmd_history(f"# @InstallerBase, package: '{package}' not exists")
-        self.cmd_history(f"# @InstallerBase checking if repository has been updated")
-        self.update_repository()
-        if self.update_repository():
-            if self.is_debian():
-                if not Sudoer.is_root():
-                    cmd = "sudo apt install -y %s" % package
-                else:
-                    cmd = "apt install -y %s" % package
-                self.cmd_history(cmd)
-                result, stdout=self.ignoreError().shell(cmd)
-                if 'lock-frontend' in stdout:
-                    if not Sudoer.is_root():
-                        cmd2 = "sudo rm -rf /var/lib/dpkg/lock-frontend"
-                    else:
-                        cmd2 = "rm -rf /var/lib/dpkg/lock-frontend"
-                    self.cmd_history(cmd2)
-                    result, stdout=self.ignoreError().shell(cmd2)
-                    self.cmd_history(cmd)
-                    result, stdout=self.ignoreError().shell(cmd)
-                installed = result
-            elif self.is_alpine():
-                self.history_install_package(package, currentframe().f_lineno)
-                if not Sudoer.is_root():
-                    cmd = "sudo apk add %s" % package
-                else:
-                    cmd = "apk add %s" % package
-                self.cmd_history(cmd)
-                self.ignoreError().shell(cmd)
-                installed = True
-            elif self.is_redhat():
-                if not Sudoer.is_root():
-                    cmd = "sudo yum install -y %s" % package
-                else:
-                    cmd = "yum install -y %s" % package
-                self.cmd_history(cmd)
-                self.ignoreError().shell(cmd)
-                installed = True
-            elif self.is_fedora():
-                if not Sudoer.is_root():
-                    cmd = "sudo dnf install -y %s" % package
-                else:
-                    cmd = "dnf install -y %s" % package
-                self.cmd_history(cmd)
-                self.ignoreError().shell(cmd)
-                installed = True
-            elif self.is_opensuse():
-                if not Sudoer.is_root():
-                    cmd = "sudo zypper install -y %s" % package
-                else:
-                    cmd = "zypper install -y %s" % package
-                self.cmd_history(cmd)
-                self.ignoreError().shell(cmd)
-                installed = True
-            else:
-                self.cmd_history("  # Not compatible OS")
-                self.msg_not_compatible_os()
-            if installed:
-                if path is not None and package is not None:
-                    if isinstance(path,basestring):
-                        if self.pathexists(path):
-                            installed = True
-                    elif isinstance(path,list):
-                        for l in path:
-                            if self.pathexists(l):
-                                installed = True
-                else:
-                    installed = False
-            if installed:
-                self.cmd_history(f"# @InstallerBase, '{package}' has just installed")
-        else:
-            self.cmd_history(f"# @InstallerBase, repository cannot be updated")
-        return installed
-
-    def installedGlobal(self):
-        return self.pathexists(self.globalInstallPath(0)) or self.pathexists(self.globalInstallPath(1)) 
-
-    def installedLocal(self):
-        which = self.which()
-        if which == '':    
-            return False
-        if self.isCmd() or self.isGitBash():
-            return self.path_to_dos(which) == self.path_to_dos(self.localInstallPath())
-        return which == self.localInstallPath()
-
-    def install_target_global(self, this, useSudo=False):
-        if self.targetApp() != '':
-            file1 = self.globalInstallTargetPath(0)
-            file2 = self.globalInstallTargetPath(1)
-            self.history_remove_previous_global(currentframe().f_lineno)
-            self.sudoRemoveFile( file1 )
-            self.sudoRemoveFile( file2 )
-        if self.pathexists(self.globalFolder(0)):
-            self.history_copy_uncompressed(currentframe().f_lineno)
-            self.cp(this,file1,useSudo=useSudo)
-            if not self.isCmd() and not self.isGitBash():
-                self.history_change_target_mode(currentframe().f_lineno)
-                self.chmod_x(file1, useSudo=useSudo)
-        elif self.pathexists(self.globalFolder(1)):
-            self.history_copy_uncompressed(currentframe().f_lineno)
-            self.cp(this,file2,useSudo=useSudo)
-            if not self.isCmd() and not self.isGitBash():
-                self.history_change_target_mode(currentframe().f_lineno)
-                self.chmod_x(file2, useSudo=useSudo)
-        if this.startswith('/tmp') or self.isGitBash() or self.isCmd():
-            self.history_remove_uncompressed(currentframe().f_lineno)
-            self.removeFile(this)
-
-    def install_target_local(self, this):
-        self.mkdir( self.localInstallFolder() )
-        if self.targetApp() != '':
-            self.history_remove_previous_local(currentframe().f_lineno)
-            self.removeFile(self.localTargetInstallPath())
-        self.history_copy_uncompressed(currentframe().f_lineno)
-        self.cp(this, self.localInstallFolder())
-        if not self.isCmd() and not self.isGitBash():
-            self.history_change_target_mode(currentframe().f_lineno)
-            result = self.chmod_x(self.localTargetInstallPath())
-        if this.startswith('/tmp') or self.isCmd() or self.isGitBash():
-            self.history_remove_downloaded(currentframe().f_lineno)
-            self.removeFile(this)
-        self.check_env()
-
-    def rc_update(self, package):
-        self.history_check_rc_update(currentframe().f_lineno)
-        if Sudoer.is_root_or_has_sudo():
-            rc_cmd = self.which_cmd("rc-update")
-            if rc_cmd != "":
-                if self.sudo_cmd()!="":
-                    cmd = 'sudo %s add %s default' % (rc_cmd, package)
-                else:
-                    cmd = '%s add %s default' % (rc_cmd, package)
-
-    def update_repository(self):
-        # root_or_sudo() Check user is root or has sudo privilege and assuming linux
-        cmd = ""
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        if not hasattr(self,'__has_repository_updated__'):
-            self.__has_repository_updated__ = False
-        if self.__has_repository_updated__:
-            return True
-        if self.is_debian():
-            if Sudoer.is_root():
-                cmd = "apt update"
-            else:
-                cmd = "sudo apt update"
-        elif self.is_alpine():
-            cmd = "apk update"
-        elif self.osVersion().startswith('CentOS'):
-            if Sudoer.is_root():
-                cmd = "yum check-update"
-            else:
-                cmd = "sudo yum check-update"
-        elif self.is_fedora():
-            if Sudoer.is_root():
-                cmd = "dnf check-update"
-            else:
-                cmd = "sudo dnf check-update"
-        else:
-            self.msg_not_compatible_os()
-        if cmd != "":
-            self.history_update_repository(currentframe().f_lineno)
-            self.cmd_history(cmd)
-            self.ignoreError().shell(cmd)
-            self.__has_repository_updated__=True
-            return True
-        return False
-
-    def uninstall_package(self, package=None, path=None):
-        # root_or_sudo() Check user is root or has sudo privilege and assuming linux
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        installed = False
-        location = ''
-        self.cmd_history(f"# ** @InstallerBase, uninstalling {package} **")
-        self.cmd_history(f"# @InstallerBase, checking {path} **")
-
-        if path is not None and package is not None:
-            self.history_check_exists(package, currentframe().f_lineno)
-            if isinstance(path,basestring):
-                if self.pathexists(path, use_history=True):
-                    location = path
-                    installed=True
-                    self.history_location_found(location, currentframe().f_lineno)
-            elif isinstance(path,list):
-                for l in path:
-                    if self.pathexists(l, use_history=True):
-                        location = l
-                        installed=True
-                        self.history_location_found(location, currentframe().f_lineno)
-        if installed:
-            if self.is_debian():
-                self.history_uninstall_package(package, currentframe().f_lineno)
-                if not Sudoer.is_root():
-                    cmd = ["sudo", "DEBIAN_FRONTEND=noninteractive", "apt", "purge", "--auto-remove", "-y", package]
-                else:
-                    cmd =["DEBIAN_FRONTEND=noninteractive", "apt", "purge", "--auto-remove", "-y", package]
-                self.cmd_history(" ".join(cmd))
-                self.ignoreError().shell(cmd)
-                installed = True
-            elif self.is_alpine():
-                self.history_uninstall_package(package, currentframe().f_lineno)
-                if not Sudoer.is_root():
-                    cmd = ["sudo", "apk", "del", package]
-                else:
-                    cmd = ["apk", "del", package]
-                self.cmd_history(" ".join(cmd))
-                self.ignoreError().shell(cmd)
-                installed = True
-            elif self.osVersion().startswith('CentOS'):
-                if not Sudoer.is_root():
-                    cmd = "sudo yum remove -y %s" % package
-                else:
-                    cmd = "yum remove -y %s" % package
-                self.cmd_history(cmd)
-                self.ignoreError().shell(cmd)
-                installed = True
-            elif self.is_fedora():
-                if not Sudoer.is_root():
-                    cmd = "sudo dnf remove -y %s" % package
-                else:
-                    cmd = "dnf remove -y %s" % package
-                self.cmd_history(cmd)
-                self.ignoreError().shell(cmd)
-                installed = True
-            else:
-                self.msg_not_compatible_os()
-                return False
-            if self.pathexists(location):
-                self.cmd_history(f"# @InstallerBase, '{package}' has just uninstalled")
-                return False
-        return True
-
-    def nopw(self, user, cmd):
-        return "%s ALL=(ALL) NOPASSWD: %s" % (user, cmd)
-
-    def add_sudoers(self, fname, content):
-        # root_or_sudo() Check user is root or has sudo privilege and assuming linux
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        target_sudoers="/etc/sudoers.d/%s" % fname
-        if not self.pathexists(target_sudoers):
-            tempSudoer = "%s/%s-%s" % (self.tempFolder(),fname, self.timestamp())
-            file = self.open(tempSudoer,'w')
-            file.write(content)
-            file.close()
-            if Sudoer.is_root():
-                self.cp(tempSudoer, target_sudoers)
-            else:
-                self.cp(tempSudoer, target_sudoers, useSudo=True)
-            self.history_remove_temp(currentframe().f_lineno)
-            self.removeFile(tempSudoer)
-            return True
-        return True
-
-    def __alpine_ask_install_sudo__(self):
-        if self.ask_install_sudo():
-            cmd=['apk', 'add', 'sudo']
-            self.cmd_history(' '.join(cmd))
-            result, stdout = self.shell(cmd, True)
-            cmd="echo '%wheel ALL=(ALL) ALL' > /etc/sudoers.d/wheel"
-            self.cmd_history(cmd)
-            result, stdout = self.shell(cmd)
-    
-    def add_apk_community(self):
-        comm="https://dl-cdn.alpinelinux.org/alpine/%s/community" % self.alpine_version()
-        hasCommunity=False
-        self.history_check_repositories(currentframe().f_lineno)
-        fin = self.open('/etc/apk/repositories', "rt", use_history=True)
-        for line in fin:
-            if 'https://dl-cdn.alpinelinux.org' in line and 'community' in line:
-                if '#' not in line:
-                    hasCommunity=True
-        fin.close()
-        if not hasCommunity:
-            with self.open('/etc/apk/repositories', "a") as file:
-                file.write("\n%s\n" % comm)
-            file.close()
-        return True
-
-    def msg_uninstall_global(self, title="GLOBAL UNINSTALL"):
-        self.safeMsg("You have uninstalled successfully.", title)
-
-    def msg_not_compatible_os(self, title="INSTALL"):
-        self.infoMsg("Your OS is not compatible: %s" % self.osVersion(), title)
-
-    def msg_root_continue(self, title="SELF INSTALL"):
-        self.infoMsg("You must be root or sudo to continue installation!", title)
-
-    def msg_sudo_not_installed(self, title="SUDO TEST"):
-        if not hasattr(self,'__msg_sudo_not_installed__'):
-            self.__msg_sudo_not_installed__ = True
-            self.infoMsg("'SUDO' has not installed in your system.", title)
-            if self.is_alpine():
-                self.safeMsg("Please use the following command to install sudo:\n    apk add sudo", title)
-
-class InstallMuslDev(InstallerBase):
-
-    CLASSNAME = "InstallMuslDev"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 1
-
-    @staticmethod
-    def class_version():
-        return f"{InstallMuslDev.CLASSNAME} v{InstallMuslDev.MAJOR_VERSION}.{InstallMuslDev.MINOR_VERSION}.{InstallMuslDev.PATCH_VERSION}"
-
-    def __init__(self, fromClass=None, this=None):
-        try:
-            super().__init__(fromClass=fromClass, this=this)
-        except:
-            super(InstallMuslDev, self).__init__(fromClass=fromClass, this=this)
-
-    def install_musl_dev(self):
-        if not Sudoer.is_root():
-            return False
-        if self.is_alpine():
-            return self.install_package('musl-dev',['/usr/include/stdio.h'])
-        return True
-
-    def uninstall_musl_dev(self):
-        if not Sudoer.is_root():
-            return False
-        if self.is_alpine():
-            return self.uninstall_package('musl-dev',['/usr/include/stdio.h'])
-        return True
-
-class InstallPing(InstallerBase):
-
-    CLASSNAME = "InstallPing"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 3
-
-    @staticmethod
-    def class_version():
-        return f"{InstallPing.CLASSNAME} v{InstallPing.MAJOR_VERSION}.{InstallPing.MINOR_VERSION}.{InstallPing.PATCH_VERSION}"
-
-    def __init__(self, fromClass=None, this=None):
-        try:
-            super().__init__(fromClass=fromClass, this=this)
-        except:
-            super(InstallPing, self).__init__(fromClass=fromClass, this=this)
-
-    def install_ping(self):
-        if self.is_alpine():
-            result = self.install_package('iputils-ping', ['/usr/bin/ping'])
-        else:
-            result = self.install_package('iputils-ping', ['/usr/bin/ping'])
-        return result
-
-    def uninstall_ping(self):
-        if self.is_alpine():
-            result = self.uninstall_package('iputils-ping', ['/usr/bin/ping'])
-        else:
-            result = self.uninstall_package('iputils-ping', ['/usr/bin/ping'])
-        return result
-
-class InstallPip(InstallerBase):
-
-    CLASSNAME = "InstallPip"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 4
-
-    @staticmethod
-    def class_version():
-        return f"{InstallPip.CLASSNAME} v{InstallPip.MAJOR_VERSION}.{InstallPip.MINOR_VERSION}.{InstallPip.PATCH_VERSION}"
-
-    def __init__(self, fromClass=None, this=None):
-        try:
-            super().__init__(fromClass=fromClass, this=this)
-        except:
-            super(InstallPip, self).__init__(fromClass=fromClass, this=this)
-
-    def install_pip(self):
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        result = True
-        if self.is_alpine():
-            result = self.install_package('py3-pip', ['/usr/bin/pip3'])
-        elif self.is_mac():
-            self.download_get_install_pip()
-            return True
-        elif self.is_window():
-            if self.pathexists('c:\\Program Files\\Python312\\Scripts\\pip3.exe'):
-                return True
-            elif self.pathexists('c:\\User\\%s\\AppData\\Local\\Microsoft\\WindowsApps\\pip3.exe' % self.username()):
-                return True
-            return False
-        else:
-            result = self.install_package('python3-pip', ['/usr/bin/pip3','/usr/local/bin/pip3'])
-        return result
-
-    def uninstall_libsqlite3_dev(self):
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        if self.is_alpine():
-            result = self.uninstall_package('py3-pip', ['/usr/bin/pip3'])
-        else:
-            result = self.uninstall_package('python3-pip', ['/usr/bin/pip3','/usr/local/bin/pip3'])
-        return result
-
-    def install_python_package(self, package, sudo=False):
-        self.history_install_package(package, currentframe().f_lineno)
-        if self.is_ubuntu() and self.os_major_version()>22:
-            if sudo:
-                cmd = 'sudo pip3 install --upgrade --break-system-packages %s' % package
-            else:
-                cmd = 'pip3 install --upgrade --break-system-packages %s' % package
-        elif self.osVersion().startswith('Debian') and self.os_major_version()>14271:
-            if sudo:
-                cmd = 'sudo pip3 install --upgrade --break-system-packages %s' % package
-            else:   
-                cmd = 'pip3 install --upgrade --break-system-packages %s' % package
-        else:
-            if sudo:
-                cmd = 'sudo pip3 install --upgrade %s' % package
-            else:
-                cmd = 'pip3 install --upgrade %s' % package
-        self.cmd_history(cmd)
-        self.ignoreError().shell(cmd)
-
-    def uninstall_python_package(self, package=None, sudo=False):
-        self.history_uninstall_package('jupyter', currentframe().f_lineno)
-        if sudo:
-            cmd = 'sudo pip3 uninstall --break-system-packages %s' % package
-        else:
-            cmd = 'pip3 uninstall --break-system-packages %s' % package
-        self.cmd_history(cmd)
-        self.ignoreError().shell(cmd)
-
-class InstallGcc(InstallerBase):
-
-    CLASSNAME = "InstallGcc"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 3
-
-    @staticmethod
-    def class_version():
-        return f"{InstallGcc.CLASSNAME} v{InstallGcc.MAJOR_VERSION}.{InstallGcc.MINOR_VERSION}.{InstallGcc.PATCH_VERSION}"
-
-    def __init__(self, fromClass=None, this=None):
-        try:
-            super().__init__(fromClass=fromClass, this=this)
-        except:
-            super(InstallGcc, self).__init__(fromClass=fromClass, this=this)
-
-    def install_gcc(self):
-        if self.is_mac() and not self.pathexists('/usr/bin/gcc'):
-            self.infoMsg("Please see details in installation of XCode command line tools at: https://mac.install.guide/commandlinetools/","Package needed")
-            return False
-        else:
-            return self.install_package('gcc', ['/usr/bin/gcc'])
-
-    def uninstall_gcc(self):
-        return self.uninstall_package('gcc', ['/usr/bin/gcc'])
-
-class InstallPythonDev(InstallerBase):
-
-    CLASSNAME = "InstallPythonDev"
-    MAJOR_VERSION = 1
-    MINOR_VERSION = 0
-    PATCH_VERSION = 4
-
-    @staticmethod
-    def class_version():
-        return f"{InstallPythonDev.CLASSNAME} v{InstallPythonDev.MAJOR_VERSION}.{InstallPythonDev.MINOR_VERSION}.{InstallPythonDev.PATCH_VERSION}"
-
-    def __init__(self, fromClass=None, this=None):
-        try:
-            super().__init__(fromClass=fromClass, this=this)
-        except:
-            super(InstallPythonDev, self).__init__(fromClass=fromClass, this=this)
-
-    def install_python_dev(self):
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        if self.python2() != '':
-            if self.is_alpine():
-                self.install_package('python2-dev','/usr/bin/python3-config')
-            elif self.is_debian():
-                self.install_package('python-dev','/usr/bin/python3-config')
-            elif self.is_fedora():
-                self.install_package('python2-devel','/usr/bin/python3-config')
-            elif self.is_redhat():
-                self.install_package('python-devel','/usr/bin/python3-config')
-            elif self.is_opensuse():
-                self.install_package('python-devel','/usr/bin/python3-config')
-            else:
-                self.install_package('python-devel','/usr/bin/python3-config')
-        if self.python3() != '':
-            if self.is_alpine():
-                self.install_package('python3-dev','/usr/bin/python3-config')
-            elif self.is_debian():
-                self.install_package('python3-dev','/usr/bin/python3-config')
-            elif self.is_fedora():
-                self.install_package('python3-devel','/usr/bin/python3-config')
-            elif self.is_redhat():
-                self.install_package('python3-devel','/usr/bin/python3-config')
-            elif self.is_opensuse():
-                self.install_package('python3-devel','/usr/bin/python3-config')
-            else:
-                self.install_package('python3-devel')
-        if self.python3() == '' and self.python2() == '':
-            self.cmd_history("# Both python2 and python3 not found! ")
-
-    def uninstall_python_dev(self):
-        if not Sudoer.is_root_or_has_sudo():
-            return False
-        if self.python2() != '':
-            if self.is_alpine():
-                result = self.uninstall_package('python2-dev','/usr/bin/python3-config')
-            elif self.is_debian():
-                result = self.uninstall_package('python-dev','/usr/bin/python3-config')
-            elif self.is_fedora():
-                result = self.uninstall_package('python2-devel','/usr/bin/python3-config')
-            elif self.is_redhat():
-                result = self.uninstall_package('python-devel','/usr/bin/python3-config')
-            elif self.is_opensuse():
-                result = self.uninstall_package('python-devel','/usr/bin/python3-config')
-            else:
-                result = self.uninstall_package('python-devel','/usr/bin/python3-config')
-        if self.python3() != '':
-            if self.is_alpine():
-                result = self.uninstall_package('python3-dev','/usr/bin/python3-config')
-            elif self.is_debian():
-                result = self.uninstall_package('python3-dev','/usr/bin/python3-config')
-            elif self.is_fedora():
-                result = self.uninstall_package('python3-devel','/usr/bin/python3-config')
-            elif self.is_redhat():
-                result = self.uninstall_package('python3-devel','/usr/bin/python3-config')
-            elif self.is_opensuse():
-                result = self.uninstall_package('python3-devel','/usr/bin/python3-config')
-            else:
-                result = self.uninstall_package('python3-devel')
-        return result
 
 class CheckSystem(PyCheck):
 
@@ -3815,7 +3405,7 @@ class Curl(Shell):
     CLASSNAME = "Curl"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 7
+    PATCH_VERSION = 6
 
     @staticmethod
     def class_version():
@@ -3915,10 +3505,11 @@ class Curl(Shell):
         return True, stdout
 
     def curl_download(self, url='', file='', ignoreErr=True):
-        self.cmd_history("# ** Start Checking online **", currentframe().f_lineno)
         if self.networkCore.check_online():
+            print("is online")
             self.history_curl_check(currentframe().f_lineno)
             if self.curl_is_200(url):
+                print("is 200")
                 self.history_curl_download(currentframe().f_lineno)
                 self.curl_cmd(url=url, file=file, ignoreErr=ignoreErr)
                 if file == '':
@@ -3959,8 +3550,8 @@ class AppBase(AppPara, ShellProfile, Curl, Temp, Ask):
     CLASSNAME = "AppBase"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 34
-    
+    PATCH_VERSION = 31
+
     @staticmethod
     def class_version():
         return f"{AppBase.CLASSNAME} v{AppBase.MAJOR_VERSION}.{AppBase.MINOR_VERSION}.{AppBase.PATCH_VERSION}"
@@ -4101,7 +3692,7 @@ class AppBase(AppPara, ShellProfile, Curl, Temp, Ask):
             return False
         else:
             # root_or_sudo() Check user is root or has sudo privilege
-            return Sudoer.is_root_or_has_sudo()
+            return Sudoer.root_or_sudo()
 
     def check_update(self):
         if self.need_update():
@@ -4168,7 +3759,7 @@ class AppBase(AppPara, ShellProfile, Curl, Temp, Ask):
         self.tempFile('get-pip')
         self.download_to_temp("https://bootstrap.pypa.io/get-pip.py", file=self.tempFile(), verbal=False)
         cmd="%s %s" % (self.executable(),self.tempFile())
-        if (not self.is_mac() and self.is_linux()) and not Sudoer.is_root_or_has_sudo():
+        if (not self.is_mac() and self.is_linux()) and not Sudoer.root_or_sudo():
             cmd="sudo %s %s" % (self.executable(),self.tempFile())
         self.cmd_history("# ** install pip by get-pip.py **", currentframe().f_lineno)
         self.cmd_history(cmd)
@@ -4555,12 +4146,12 @@ class AppBase(AppPara, ShellProfile, Curl, Temp, Ask):
         p = '|'.join(self.subCmd())
         return "%s [%s]" % (self.appExec(), p)
 
-class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPythonDev):
+class CyMasterCore(AppBase):
 
     CLASSNAME = "CyMasterCore"
     MAJOR_VERSION = 1
     MINOR_VERSION = 0
-    PATCH_VERSION = 37
+    PATCH_VERSION = 33
     CHECKED=False
 
     @staticmethod
@@ -4599,12 +4190,12 @@ class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPytho
     def msg_uninstall_global_failed(self, title="UNINSTALL FAILED"):
         self.criticalMsg("Failed to uninstall globally", title)
 
-    def __init__(self, this = None, logger = None):
+    def __init__(self, this = None):
         try:
             super().__init__(fromClass=self, this=this)
         except:
             super(CyMasterCore, self).__init__(fromClass=self, this=this)
-        self.logger = logger
+
         if not self.check_dependencies():
             sys.exit(1)
         self.networkCore = NetworkCore()
@@ -4717,7 +4308,7 @@ class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPytho
         self.after('checkSystem', self.afterCheckSystem)
         self.after('checkStdinOk', self.afterCheckStdinOk)
         self.after('checkSystemFail', self.debugInfo)
-        self.after('prerequsiteLocalFail', self.prerequsiteLocalFail)
+        self.after('prerequsiteLocalFail', self.debugInfo)
         self.after('notInstalledLocal', self.afterNotInstalledLocal)
         self.after('notInstalledGlobal', self.afterNotInstalledGlobal)
         self.after('parseArgumentsNotInstalledLocal', self.afterParseArgumentsNotInstalledLocal)
@@ -4965,10 +4556,6 @@ class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPytho
     def afterCheckStdinOk(self):
         self.systemInfo()
 
-    def afterPrerequsiteLocalFail(self):
-        self.criticalMsg("Gcc or Muslc Failed", "PREQUSITE")
-        self.debugInfo()
-
     def afterParseArgumentsLocal(self):
         if len(sys.argv) > 1:
             self.cmd(sys.argv[1])
@@ -5040,7 +4627,7 @@ class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPytho
         self.shell(cmd)
 
     def installAll(self):
-        if not Sudoer.is_root_or_has_sudo():
+        if not Sudoer.root_or_sudo():
             self.criticalMsg("You should be root or sudo to run this program", "SUDO REQUIRED")
             return False
         # Loop through the directory structure recursively
@@ -5131,14 +4718,14 @@ class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPytho
                     if not result:
                         self.prerequsiteNotInstalledLocalFail()
                         return False
-                #if self.need_update():
-                #    if self.tempFolder() == "":
-                #        self.tempLocalNotInstalledFail()
-                #        return False
-                #    else:
-                #        self.hasTempNotInstalledLocal()
-                #else:
-                self.copySelfLocal()
+                if self.need_update():
+                    if self.tempFolder() == "":
+                        self.tempLocalNotInstalledFail()
+                        return False
+                    else:
+                        self.hasTempNotInstalledLocal()
+                else:
+                    self.copySelfLocal()
             elif self.cmd() == "uninstall":
                 if self.isInstalledLocal():
                     self.checkInstalledLocal()
@@ -5907,33 +5494,31 @@ class CyMasterCore(AppBase, InstallMuslDev, InstallGcc, InstallPip, InstallPytho
         return False
 
     def requisite(self):
-        installer1 = InstallMuslDev(fromClass=self, this=self.this())
-        result1 = installer1.install_musl_dev()
-        installer2 = InstallGcc(fromClass=self, this=self.this())
-        result2 = installer2.install_gcc()
-        installer3 = InstallPip(fromClass=self, this=self.this())
-        result3 = installer3.install_pip()
+        result1 = self.install_musl_dev()
+        result2 = self.install_gcc()
+
+        result3 = self.install_pip()
         self.history_check_exists("cython", currentframe().f_lineno)
         cython = self.which_cmd('cython')
         if cython == '':
-            result4 = installer3.install_python_package('cython')
+            result4 = self.install_python_package('cython')
         else:
             self.cmd_history(f"ls {cython}")
             self.history_package_exists("cython", currentframe().f_lineno)
             result4 = True
-        installer5 = InstallPythonDev(fromClass=self, this=self.this())
-        result5 = installer5.install_python_dev()
+        result5 = self.install_python_dev()
         return (result1 or result2) and result3
 
-def main():
+if __name__ == "__main__":
+
     appname = 'CyMaster'
     MAJOR_VERSION = 1
-    MINOR_VERSION = 1
-    PATCH_VERSION = 2
+    MINOR_VERSION = 0
+    PATCH_VERSION = 24
 
     # Create logger instance
     logger = ChronicleLogger(logname=appname)
-    appname=logger.logName()  # the appname will change to cy-master for non-compiled script, but remains CyMaster for compiled binary
+    appname=logger.logName()    
     basedir=logger.baseDir()
     if logger.isDebug():
         logger.log_message(f"{appname} v{MAJOR_VERSION}.{MINOR_VERSION}.{PATCH_VERSION} ({__file__}) with following:", component="main")
@@ -5944,27 +5529,15 @@ def main():
         logger.log_message(f">> {CmdHistory.class_version()}", component="main")
         logger.log_message(f">> {Curl.class_version()}", component="main")
         logger.log_message(f">> {CyMasterCore.class_version()}", component="main")
-        logger.log_message(f">> {InstallerBase.class_version()}", component="main")
-        logger.log_message(f">> {InstallGcc.class_version()}", component="main")
-        logger.log_message(f">> {InstallMuslDev.class_version()}", component="main")
         logger.log_message(f">> {InstallPing.class_version()}", component="main")
-        logger.log_message(f">> {InstallPip.class_version()}", component="main")
-        logger.log_message(f">> {InstallPythonDev.class_version()}", component="main")
         logger.log_message(f">> {NetworkCore.class_version()}", component="main")
-        logger.log_message(f">> {NmcliManager.class_version()}", component="main")
-        logger.log_message(f">> {OS.class_version()}", component="main")
         logger.log_message(f">> {PyCheck.class_version()}", component="main")
         logger.log_message(f">> {Shell.class_version()}", component="main")
         logger.log_message(f">> {ShellProfile.class_version()}", component="main")
         logger.log_message(f">> {Sudoer.class_version()}", component="main")
         logger.log_message(f">> {Temp.class_version()}", component="main")
-        logger.log_message(f">> {Which.class_version()}", component="main")
 
-    app = CyMasterCore(__file__, logger)
+    app = CyMasterCore(__file__)
     app.allowInstallLocal(True)
-    app.setInstallation(appName=appname,author='Cloudgen Wong',homepage="https://github.com/cloudgen/cy-master",downloadUrl="https://dl.leolio.page/cy-master",lastUpdate='2025-11-25',majorVersion=1,minorVersion=1,patchVersion=2)
+    app.setInstallation(appName=appname,author='Cloudgen Wong',homepage="https://github.com/cloudgen/cy-master",downloadUrl="https://dl.leolio.page/cy-master",lastUpdate='2025-09-02',majorVersion=1,minorVersion=0,patchVersion=24)
     app.checkSystem()
-
-if __name__ == "__main__":
-    main()
-
