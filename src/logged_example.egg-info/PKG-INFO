@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: logged-example
-Version: 0.1.1
+Version: 0.1.2
 Summary: A logging example application with sudo detection and log rotation
 Author-email: Wilgat Wong <wilgat.wong@gmail.com>
 License: MIT

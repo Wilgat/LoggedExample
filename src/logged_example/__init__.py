@@ -1,4 +1,4 @@
-from .cli import ChronicleLogger, Sudoer, Example
+from .cli import ChronicleLogger, Example
 
-__version__ = "0.1.1"
-__all__ = ["ChronicleLogger", "Sudoer", "Example"]
+__version__ = "0.1.2"
+__all__ = ["ChronicleLogger", "Example"]
