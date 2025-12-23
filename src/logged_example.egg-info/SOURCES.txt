@@ -1,9 +1,9 @@
 README.md
 pyproject.toml
 src/setup.py
-src/logged_example/__init__.py
-src/logged_example/__main__.py
-src/logged_example/cli.py
+src/LoggedExample/__init__.py
+src/LoggedExample/__main__.py
+src/LoggedExample/cli.py
 src/logged_example.egg-info/PKG-INFO
 src/logged_example.egg-info/SOURCES.txt
 src/logged_example.egg-info/dependency_links.txt

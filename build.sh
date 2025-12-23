@@ -14,14 +14,15 @@ VERSION=$(python3 - <<'PY'
 import os
 import sys
 
-# Add src to path temporarily
-sys.path.insert(0, os.path.join(os.getcwd(), "src"))
+# Add src/chronicle_logger to path temporarily
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 try:
-    from logged_example import __version__
-    print(__version__)
+    import LoggedExample
+    print(LoggedExample.__version__)
 except Exception:
     print("unknown")
+
 PY
 ) || VERSION="unknown"
 echo "logged-example build tool (v$VERSION)"

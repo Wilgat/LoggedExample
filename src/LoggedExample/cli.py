@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 from __future__ import print_function, unicode_literals
 import sys
-from chronicle_logger import ChronicleLogger
+from ChronicleLogger import ChronicleLogger
 
 class Example:
     # Remember to replace Example to name of the class
     CLASSNAME = "Example"
-    MAJOR_VERSION = 0
+    MAJOR_VERSION = 1
     MINOR_VERSION = 1
-    PATCH_VERSION = 3
+    PATCH_VERSION = 0
 
     def __init__(self, basedir="/var/app",  logger=None):
         """
@@ -36,9 +36,9 @@ def usage(appname):
 
 def main():
     appname = 'LoggedExample'
-    MAJOR_VERSION = 0
+    MAJOR_VERSION = 1
     MINOR_VERSION = 1
-    PATCH_VERSION = 3
+    PATCH_VERSION = 0
 
     # Create logger instance
     logger = ChronicleLogger(logname=appname)

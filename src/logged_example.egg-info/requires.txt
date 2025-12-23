@@ -1,1 +1,1 @@
-ChronicleLogger
+ChronicleLogger>=1.1.0

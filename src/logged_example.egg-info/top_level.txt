@@ -1,2 +1,2 @@
-logged_example
+LoggedExample
 setup

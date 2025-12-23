@@ -1,2 +1,2 @@
 [console_scripts]
-logged-example = logged_example.cli:main
+logged-example = LoggedExample.cli:main
