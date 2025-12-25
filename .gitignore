@@ -26,3 +26,4 @@ build/
 *.o
 *.a
 *.pyc
+src/*.c

@@ -44,11 +44,12 @@ LoggedExample (powered by ChronicleLogger) detects the active Python environment
 
 | Environment                  | Purpose                                                                 | Log Location (non-root)                                      | Log Location (root)                  | Best For                              |
 |------------------------------|-------------------------------------------------------------------------|--------------------------------------------------------------|--------------------------------------|---------------------------------------|
-| **venv**                     | Built-in, lightweight, project-specific isolation                       | `<venv>/.app/logged-example/log/`                            | `/var/log/logged-example/`           | Quick projects, CI/CD, simple teams   |
-| **pyenv**                    | Manage multiple Python versions easily on one system                    | `~/.pyenv/versions/3.12/.app/logged-example/log/`            | `/var/log/logged-example/`           | Developers switching Python versions  |
-| **pyenv + virtualenv**       | Best of both worlds: version + project isolation                        | `~/.pyenv/versions/<env-name>/.app/logged-example/log/`      | `/var/log/logged-example/`           | **Recommended** for most developers   |
-| **Miniconda**                | Lightweight Conda distribution — fast, minimal, scientific-friendly    | `~/miniconda3/envs/<name>/.app/logged-example/log/`          | `/var/log/logged-example/`           | Data science, ML, reproducible envs   |
-| **Anaconda**                 | Full-featured Conda with hundreds of preinstalled packages              | `~/anaconda3/envs/<name>/.app/logged-example/log/`           | `/var/log/logged-example/`           | Beginners in data/science, heavy deps |
+| N/A                     | Built-in, lightweight, project-specific isolation                       | `<home>/.app/logged-example/log/`                            | `/var/log/logged-example/`        | Quick projects, CI/CD, simple teams   |
+| **venv**                     | Built-in, lightweight, project-specific isolation                       | `<venv>/.app/logged-example/log/`                            | `<venv>/.app/logged-example/log/`           | Quick projects, CI/CD, simple teams   |
+| **pyenv**                    | Manage multiple Python versions easily on one system                    | `~/.pyenv/versions/3.12/.app/logged-example/log/`            | `/root/.pyenv/versions/3.12/.app/logged-example/log/`           | Developers switching Python versions  |
+| **pyenv + virtualenv**       | Best of both worlds: version + project isolation                        | `~/.pyenv/versions/<env-name>/.app/logged-example/log/`      | `/root/.pyenv/versions/<env-name>/.app/logged-example/log/`           | **Recommended** for most developers   |
+| **Miniconda**                | Lightweight Conda distribution — fast, minimal, scientific-friendly    | `~/miniconda3/envs/<name>/.app/logged-example/log/`          | `/root/miniconda3/envs/<name>/.app/logged-example/log/`           | Data science, ML, reproducible envs   |
+| **Anaconda**                 | Full-featured Conda with hundreds of preinstalled packages              | `~/anaconda3/envs/<name>/.app/logged-example/log/`           | `/root/anaconda3/envs/<name>/.app/logged-example/log/`           | Beginners in data/science, heavy deps |
 
 ### 1. venv (standard Python virtual environment)
 
