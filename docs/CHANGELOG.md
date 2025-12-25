@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),  
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-12-25
+
+### Added
+- Enhanced debug output in `DEBUG=show` mode: now displays a complete dump of ChronicleLogger state + all relevant environment variables (`sys.executable`, `VIRTUAL_ENV`, `CONDA_*`, `PYENV_*`, etc.)
+- New section in README.md: comprehensive **Environment Guide** with purpose, installation steps, and typical log locations for:
+  - venv
+  - pyenv
+  - pyenv + virtualenv plugin
+  - Miniconda
+  - Anaconda
+  - root vs non-root usage
+- Early prominent description of ChronicleLogger with direct PyPI link in README.md
+- Consistent use of recommended two-digit pyenv version notation (`3.12`) throughout documentation
+
+### Changed
+- Updated version to 1.1.1
+- Improved README.md structure and clarity for better user onboarding across different Python environment workflows
+- Minor refinements to debug output formatting (better alignment, separators)
+
+### Fixed
+- Small documentation inconsistencies regarding pyenv version notation
+
+## [1.1.0] - 2025-12-15
+
+### Added
+- Full environment detection support in ChronicleLogger (used by LoggedExample):
+  - venv (`inVenv()`, `venv_path()`)
+  - pyenv (`inPyenv()`, `pyenvVenv()`)
+  - Conda/Miniconda/Anaconda (`inConda()`, `condaPath()`)
+- Automatic log placement inside active environment directories (e.g. `<env>/.app/logged-example/log/`)
+- Privilege-aware path selection preserved across environments
+- Updated debug mode to show environment detection results
+
+### Changed
+- Bumped version to 1.1.0
+- Improved README.md with environment comparison table
+
+## [1.0.0] - 2025-12-10
+
+### Added
+- Initial stable release (v1.0.0)
+- Console entrypoint `logged-example`
+- Basic `info` command
+- Integration with ChronicleLogger v1.1.0
+- Full cross-version compatibility (Python 2.7 & 3.x)
+
+### Changed
+- Finalized project structure, packaging, and documentation
+
 ## [0.1.0] - 2025-12-03
 
 ### Added

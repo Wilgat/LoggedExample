@@ -46,7 +46,7 @@ For setup: `git init; git add .; git commit -m "Initial commit"`; add to require
 ## Project Name Conversion Rules
 - **CamelCase to Kebab/Snake Case**: In Python mode, `logName()` converts input (e.g., "LoggedExample") to kebab-case ("logged-example") via regex `re.sub(r'(?<!^)(?=[A-Z])', '-', name).lower()` for paths and filenames; preserved as CamelCase in Cython binaries . Directories use kebab-case for user contexts (`~/.app/logged-example/log`) or CamelCase for root (`/var/log/LoggedExample`) .
 - **Path Adaptation**: `baseDir()` defaults to `/var/<app>` (root) or `~/.app/<app>` (user); `logDir()` appends `/log`. Custom overrides via init params ignore conversion .
-- **File Handling**: CLI executable as `logged-example` post-pip install; binary as `LoggedExample` after `python setup.py build_ext --inplace` .
+- **File Handling**: CLI executable as `LoggedExample` post-pip install; binary as `LoggedExample` after `python setup.py build_ext --inplace` .
 
 ## Class Structure
 The `Example` class (in cli.py) demonstrates ChronicleLogger integration for logging in apps, with static versioning and fallback print if no logger provided .
@@ -100,7 +100,7 @@ CLI `main()`: Initializes logger with `logname='LoggedExample'`, normalizes to k
 - **Build/Deploy**: Cython compilation for binaries; pip install for scripts; no deps beyond ChronicleLogger .
 
 ## Usage Example
-For pip install: `pip install LoggedExample`; run CLI: `logged-example info` (logs "This is an example app" to file/console) .
+For pip install: `pip install LoggedExample`; run CLI: `LoggedExample info` (logs "This is an example app" to file/console) .
 
 In code (post-install or editable):
 
@@ -108,7 +108,7 @@ In code (post-install or editable):
 from LoggedExample import Example, ChronicleLogger  # From __init__.py
 
 # Init logger (privilege-aware)
-logger = ChronicleLogger(logname="LoggedExample")  # Normalizes to "logged-example" in Py mode
+logger = ChronicleLogger(logname="LoggedExample")  # Normalizes to "LoggedExample" in Py mode
 appname = logger.logName()  # "logged-example"
 basedir = logger.baseDir()  # e.g., "/var/logged-example" (root) or "~/.app/logged-example" (user)
 

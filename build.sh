@@ -6,8 +6,8 @@ set -eu
 # Pure POSIX sh, egg-info fully obliterated
 # =============================================
 
-PROJECT="logged-example"
-KG_NAME="logged_example"
+PROJECT="LoggedExample"
+KG_NAME="LoggedExample"
 
 # Get version from package (fallback to unknown)
 VERSION=$(python3 - <<'PY'
