@@ -55,8 +55,6 @@ def debug_dump_chroniclelogger(logger):
         ("condaPath()",          logger.condaPath()),
         ("is_root()",            ChronicleLogger.is_root()),
         ("root_or_sudo()",       ChronicleLogger.root_or_sudo() if hasattr(ChronicleLogger, 'root_or_sudo') else "N/A"),
-        ("should_use_system_paths()", 
-            logger.should_use_system_paths() if hasattr(logger, 'should_use_system_paths') else "N/A"),
     ]
 
     print(" ChronicleLogger State ".center(80, "-"))
