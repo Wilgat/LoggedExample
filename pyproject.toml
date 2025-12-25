@@ -3,8 +3,8 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "logged-example"
-version = "1.1.1"
+name = "LoggedExample"
+version = "1.2.0"
 description = "A logging example application with sudo detection and log rotation"
 readme = "README.md"
 requires-python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
@@ -24,6 +24,6 @@ Homepage = "https://github.com/Wilgat/LoggedExample"
 Repository = "https://github.com/Wilgat/LoggedExample"
 Issues = "https://github.com/Wilgat/LoggedExample/issues"
 
-# This makes `logged-example` command available after pip install
+# This makes `LoggedExample` command available after pip install
 [project.scripts]
-logged-example = "LoggedExample.cli:main"
+LoggedExample = "LoggedExample.cli:main"
