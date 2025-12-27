@@ -6,7 +6,7 @@
 
 **LoggedExample PyPI**: https://pypi.org/project/LoggedExample/
 
-**Current version**: 1.1.1
+**Current version**: 1.2.5
 
 ## Features
 - Uses **ChronicleLogger** for structured, timestamped logging: `[YYYY-MM-DD HH:MM:SS] pid:<PID> [<LEVEL>] @<COMPONENT> :] <MESSAGE>`

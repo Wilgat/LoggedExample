@@ -377,7 +377,7 @@ class Example:
     CLASSNAME = "Example"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 4
+    PATCH_VERSION = 5
 
     def __init__(self, basedir="/var/app", logger=None):
         """
@@ -464,7 +464,7 @@ def main():
     appname = 'LoggedExample'
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 4
+    PATCH_VERSION = 5
 
     # Create logger instance
     logger = ChronicleLogger(logname=appname)
